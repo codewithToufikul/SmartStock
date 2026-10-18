@@ -10,6 +10,7 @@ import {
 import authRouter from "./modules/auth/auth.routes.js";
 import productRoute from "./modules/products/product.routes.js";
 import stockMovementRoutes from "./modules/stock-movements/stock-movement.routes.js";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 
 const app = express()
 
@@ -38,6 +39,7 @@ app.get("/api/v1/health", (_req, res) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productRoute);
 app.use("/api/v1/stock-movements", stockMovementRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
