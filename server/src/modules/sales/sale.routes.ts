@@ -10,6 +10,7 @@ import {
     getSaleByIdController,
 } from "./sale.controller.js";
 import { dailySalesAnalyticsController, salesSummaryController } from "./sale-analytics.controller.js";
+import { productDemandForecastController } from "./sale-forecast.controller.js";
 
 const salesRoutes = Router();
 
@@ -31,5 +32,7 @@ salesRoutes.get(
     "/analytics/daily",
     dailySalesAnalyticsController,
 );
+
+salesRoutes.get("/analytics/forecast", productDemandForecastController);
 
 export default salesRoutes;

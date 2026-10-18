@@ -60,23 +60,18 @@ export async function getDailySalesAnalytics(
 ) {
     const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
 
-    // Today সহ মোট `days`টি calendar day অন্তর্ভুক্ত হবে।
-    const now = new Date();
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
+    const end = new Date();
+    end.setUTCHours(23, 59, 59, 999);
 
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - (days - 1));
+    const start = new Date(end);
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
 
     const rows = await Sale.aggregate([
         {
             $match: {
                 workspace: workspaceObjectId,
-                createdAt: {
-                    $gte: start,
-                    $lte: end,
-                },
+                createdAt: { $gte: start, $lte: end },
             },
         },
         { $unwind: "$items" },
@@ -86,16 +81,14 @@ export async function getDailySalesAnalytics(
                     $dateToString: {
                         format: "%Y-%m-%d",
                         date: "$createdAt",
+                        timezone: "UTC",
                     },
                 },
                 revenue: { $sum: "$items.lineTotal" },
                 unitsSold: { $sum: "$items.quantity" },
                 cost: {
                     $sum: {
-                        $multiply: [
-                            "$items.unitCost",
-                            "$items.quantity",
-                        ],
+                        $multiply: ["$items.unitCost", "$items.quantity"],
                     },
                 },
                 saleIds: { $addToSet: "$_id" },
@@ -116,5 +109,29 @@ export async function getDailySalesAnalytics(
         { $sort: { date: 1 } },
     ]);
 
-    return { days, dailySales: rows };
+    const salesByDate = new Map(
+        rows.map((row) => [row.date, row]),
+    );
+
+    const dailySales = [];
+
+    for (let i = 0; i < days; i++) {
+        const date = new Date(start);
+        date.setUTCDate(start.getUTCDate() + i);
+
+        const dateKey = date.toISOString().slice(0, 10);
+        const row = salesByDate.get(dateKey);
+
+        dailySales.push(
+            row ?? {
+                date: dateKey,
+                revenue: 0,
+                unitsSold: 0,
+                grossProfit: 0,
+                salesCount: 0,
+            },
+        );
+    }
+
+    return { days, dailySales };
 }

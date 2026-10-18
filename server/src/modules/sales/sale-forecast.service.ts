@@ -1,0 +1,73 @@
+import mongoose from "mongoose";
+import { Product } from "../products/product.model.js";
+import { Sale } from "./sale.model.js";
+
+export async function getProductDemandForecast(
+    workspaceId: string,
+    days = 30,
+) {
+    const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
+
+    const end = new Date();
+    end.setUTCHours(23, 59, 59, 999);
+
+    const start = new Date(end);
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
+
+    const productDemand = await Sale.aggregate([
+        {
+            $match: {
+                workspace: workspaceObjectId,
+                createdAt: { $gte: start, $lte: end },
+            },
+        },
+        { $unwind: "$items" },
+        {
+            $group: {
+                _id: "$items.product",
+                totalUnitsSold: { $sum: "$items.quantity" },
+            },
+        },
+    ]);
+
+    const demandByProduct = new Map<string, number>(
+        productDemand.map((item) => [
+            String(item._id),
+            item.totalUnitsSold,
+        ]),
+    );
+
+    const products = await Product.find({
+        workspace: workspaceObjectId,
+    })
+        .select("_id name sku stockQuantity lowStockThreshold")
+        .sort({ name: 1 })
+        .lean();
+
+    const forecasts = products.map((product) => {
+        const totalUnitsSold = demandByProduct.get(String(product._id)) ?? 0;
+        const averageDailyDemand = totalUnitsSold / days;
+
+        const estimatedDaysRemaining =
+            averageDailyDemand > 0
+                ? Math.round((product.stockQuantity / averageDailyDemand) * 100) / 100
+                : null;
+
+        return {
+            productId: String(product._id),
+            name: product.name,
+            sku: product.sku,
+            currentStock: product.stockQuantity,
+            totalUnitsSold,
+            averageDailyDemand: Math.round(averageDailyDemand * 100) / 100,
+            estimatedDaysRemaining,
+            lowStock: product.stockQuantity <= product.lowStockThreshold,
+        };
+    });
+
+    return {
+        periodDays: days,
+        forecasts,
+    };
+}
