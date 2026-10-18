@@ -1,5 +1,6 @@
 import SummaryCards from "./components/SummaryCards";
 import LowStockTable from "../products/LowStockTable";
+import DailySalesChart from "../analytics/DailySalesChart";
 
 export default function DashboardPage() {
     return (
@@ -21,6 +22,7 @@ export default function DashboardPage() {
 
                 <SummaryCards />
                 <LowStockTable />
+                <DailySalesChart />
             </div>
         </main>
     );
