@@ -3,6 +3,7 @@ import type { RequestHandler } from "express";
 import {
     createProduct,
     deleteProduct,
+    getLowStockProducts,
     getProductById,
     listProducts,
     updateProduct,
@@ -125,6 +126,30 @@ export const deleteProductController: RequestHandler = async (
         res.status(200).json({
             success: true,
             message: "Product deleted successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getLowStockProductsController: RequestHandler = async (
+    req,
+    res,
+    next,
+) => {
+    try {
+        if (!req.auth) {
+            throw new AppError(401, "Authentication is required");
+        }
+
+        const result = await getLowStockProducts(
+            req.auth.workspaceId,
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Low-stock products retrieved successfully",
             data: result,
         });
     } catch (error) {

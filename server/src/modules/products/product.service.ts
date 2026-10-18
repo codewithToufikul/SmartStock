@@ -115,3 +115,24 @@ export async function deleteProduct(
 
     return { deleted: true, productId: product.id };
 }
+
+export async function getLowStockProducts(workspaceId: string) {
+    if (!workspaceId) {
+        throw new AppError(401, "Workspace context is required");
+    }
+
+    const products = await Product.find({
+        workspace: workspaceId,
+        $expr: {
+            $lte: ["$stockQuantity", "$lowStockThreshold"],
+        },
+    }).sort({
+        stockQuantity: 1,
+        name: 1,
+    });
+
+    return {
+        products,
+        total: products.length,
+    };
+}

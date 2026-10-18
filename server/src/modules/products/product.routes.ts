@@ -6,6 +6,7 @@ import { validateBody } from "../../middleware/validate-request.js";
 import {
     createProductController,
     deleteProductController,
+    getLowStockProductsController,
     getProductController,
     listProductsController,
     updateProductController,
@@ -28,6 +29,8 @@ productRoute.post(
 
 productRoute.get("/", listProductsController);
 
+productRoute.get("/low-stock", getLowStockProductsController);
+
 productRoute.get("/:productId", getProductController);
 
 productRoute.patch(
@@ -37,5 +40,7 @@ productRoute.patch(
 );
 
 productRoute.delete("/:productId", deleteProductController);
+
+
 
 export default productRoute;
