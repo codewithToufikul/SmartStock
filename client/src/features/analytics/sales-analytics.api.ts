@@ -8,10 +8,23 @@ export interface DailySalesItem {
     salesCount: number;
 }
 
+export interface ApiResponse<T> {
+    success: boolean;
+    message: string;
+    data: T;
+}
+
+export interface DailySalesResponse {
+    days: number;
+    dailySales: DailySalesItem[];
+}
+
 export const salesAnalyticsApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getDailySales: builder.query<DailySalesItem[], number>({
-            query: (days) => `/sales/analytics/daily?days=${days}`,
+        getDailySales: builder.query<DailySalesItem[], number | void>({
+            query: (days = 7) => `/sales/analytics/daily?days=${days ?? 7}`,
+            transformResponse: (response: ApiResponse<DailySalesResponse>) =>
+                response.data.dailySales,
             providesTags: ["Sales"],
         }),
     }),

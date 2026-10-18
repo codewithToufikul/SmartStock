@@ -31,7 +31,9 @@ export default function DailySalesChart() {
         );
     }
 
-    const chartData = data.map((item) => ({
+    const salesList = Array.isArray(data) ? data : [];
+
+    const chartData = salesList.map((item) => ({
         ...item,
         day: new Date(`${item.date}T00:00:00Z`).toLocaleDateString("en-GB", {
             day: "2-digit",
@@ -40,8 +42,8 @@ export default function DailySalesChart() {
         }),
     }));
 
-    const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
-    const totalUnits = data.reduce((sum, item) => sum + item.unitsSold, 0);
+    const totalRevenue = salesList.reduce((sum, item) => sum + item.revenue, 0);
+    const totalUnits = salesList.reduce((sum, item) => sum + item.unitsSold, 0);
 
     return (
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
