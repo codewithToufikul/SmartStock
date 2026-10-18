@@ -8,6 +8,7 @@ import {
     notFoundHandler,
 } from "./middleware/error-handler.js";
 import authRouter from "./modules/auth/auth.routes.js";
+import productRoute from "./modules/products/product.routes.js";
 
 const app = express()
 
@@ -34,6 +35,7 @@ app.get("/api/v1/health", (_req, res) => {
 });
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/products", productRoute);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
