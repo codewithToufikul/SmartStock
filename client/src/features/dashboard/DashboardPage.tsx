@@ -1,4 +1,5 @@
 import SummaryCards from "./components/SummaryCards";
+import LowStockTable from "../products/LowStockTable";
 
 export default function DashboardPage() {
     return (
@@ -19,6 +20,7 @@ export default function DashboardPage() {
                 </header>
 
                 <SummaryCards />
+                <LowStockTable />
             </div>
         </main>
     );
