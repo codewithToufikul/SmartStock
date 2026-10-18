@@ -9,6 +9,7 @@ import {
     listSalesController,
     getSaleByIdController,
 } from "./sale.controller.js";
+import { dailySalesAnalyticsController, salesSummaryController } from "./sale-analytics.controller.js";
 
 const salesRoutes = Router();
 
@@ -23,5 +24,12 @@ salesRoutes.post(
 salesRoutes.get("/", listSalesController);
 
 salesRoutes.get("/:saleId", getSaleByIdController);
+
+salesRoutes.get("/analytics/summary", salesSummaryController);
+
+salesRoutes.get(
+    "/analytics/daily",
+    dailySalesAnalyticsController,
+);
 
 export default salesRoutes;
