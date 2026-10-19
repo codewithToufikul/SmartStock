@@ -45,63 +45,84 @@ export default function DemandForecastTable() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                             <tr>
-                                <th className="px-6 py-4 font-semibold">Product</th>
-                                <th className="px-6 py-4 font-semibold">Current Stock</th>
-                                <th className="px-6 py-4 font-semibold">Units Sold</th>
-                                <th className="px-6 py-4 font-semibold">Daily Demand</th>
-                                <th className="px-6 py-4 font-semibold">Days Remaining</th>
-                                <th className="px-6 py-4 font-semibold">Status</th>
+                                <th className="px-5 py-4 font-semibold">Product</th>
+                                <th className="px-5 py-4 font-semibold">Current Stock</th>
+                                <th className="px-5 py-4 font-semibold">Daily Demand (d̂)</th>
+                                <th className="px-5 py-4 font-semibold">Days Remaining</th>
+                                <th className="px-5 py-4 font-semibold">Reorder Point (ROP)</th>
+                                <th className="px-5 py-4 font-semibold">Suggested Order (Q)</th>
+                                <th className="px-5 py-4 font-semibold">Status</th>
                             </tr>
                         </thead>
 
                         <tbody className="divide-y divide-slate-100">
-                            {forecasts.map((product) => (
-                                <tr key={product.productId} className="hover:bg-slate-50">
-                                    <td className="whitespace-nowrap px-6 py-4">
-                                        <p className="font-medium text-slate-900">
-                                            {product.name}
-                                        </p>
-                                        <p className="mt-1 text-xs text-slate-500">
-                                            {product.sku}
-                                        </p>
-                                    </td>
+                            {forecasts.map((product) => {
+                                const needsOrder = Boolean(product.needsRestock);
 
-                                    <td className="px-6 py-4 font-semibold text-slate-800">
-                                        {product.currentStock}
-                                    </td>
+                                return (
+                                    <tr key={product.productId} className="hover:bg-slate-50">
+                                        <td className="whitespace-nowrap px-5 py-4">
+                                            <p className="font-medium text-slate-900">
+                                                {product.name}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-slate-500">
+                                                {product.sku}
+                                            </p>
+                                        </td>
 
-                                    <td className="px-6 py-4 text-slate-600">
-                                        {product.totalUnitsSold}
-                                    </td>
+                                        <td className="px-5 py-4 font-semibold text-slate-800">
+                                            {product.currentStock}
+                                        </td>
 
-                                    <td className="px-6 py-4 text-slate-600">
-                                        {product.averageDailyDemand.toFixed(2)}
-                                    </td>
+                                        <td className="px-5 py-4 text-slate-600">
+                                            {product.averageDailyDemand.toFixed(2)}/day
+                                        </td>
 
-                                    <td className="px-6 py-4 font-medium text-slate-800">
-                                        {product.estimatedDaysRemaining === null
-                                            ? "N/A"
-                                            : `${product.estimatedDaysRemaining.toFixed(1)} days`}
-                                    </td>
+                                        <td className="px-5 py-4 font-medium text-slate-800">
+                                            {product.estimatedDaysRemaining === null
+                                                ? "—"
+                                                : `${product.estimatedDaysRemaining.toFixed(1)} days`}
+                                        </td>
 
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${product.currentStock === 0
-                                                    ? "bg-rose-100 text-rose-700"
-                                                    : product.lowStock
-                                                        ? "bg-amber-100 text-amber-700"
-                                                        : "bg-emerald-100 text-emerald-700"
-                                                }`}
-                                        >
-                                            {product.currentStock === 0
-                                                ? "Out of stock"
-                                                : product.lowStock
-                                                    ? "Low stock"
-                                                    : "Healthy"}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
+                                        <td className="px-5 py-4 font-mono text-slate-700">
+                                            {product.reorderPoint !== undefined ? (
+                                                <span title={`Lead: ${product.leadTimeDays ?? 0}d, SS: ${product.safetyStock ?? 0}`}>
+                                                    {product.reorderPoint} units
+                                                </span>
+                                            ) : (
+                                                "—"
+                                            )}
+                                        </td>
+
+                                        <td className="px-5 py-4 font-mono">
+                                            {needsOrder && (product.suggestedRestock ?? 0) > 0 ? (
+                                                <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700 border border-amber-200">
+                                                    Order +{product.suggestedRestock}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-slate-400 font-medium">None needed</span>
+                                            )}
+                                        </td>
+
+                                        <td className="px-5 py-4">
+                                            <span
+                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${product.currentStock === 0
+                                                        ? "bg-rose-100 text-rose-700"
+                                                        : needsOrder || product.lowStock
+                                                            ? "bg-amber-100 text-amber-700"
+                                                            : "bg-emerald-100 text-emerald-700"
+                                                    }`}
+                                            >
+                                                {product.currentStock === 0
+                                                    ? "Out of stock"
+                                                    : needsOrder || product.lowStock
+                                                        ? "Reorder alert"
+                                                        : "Healthy"}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

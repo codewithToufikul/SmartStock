@@ -1,7 +1,10 @@
-import { useGetLowStockProductsQuery } from "./products.api";
+import { useState } from "react";
+import { useGetLowStockProductsQuery, type Product } from "./products.api";
+import StockMovementModal from "../stock-movements/StockMovementModal";
 
 export default function LowStockTable() {
     const { data, isLoading, isError } = useGetLowStockProductsQuery();
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     if (isLoading) {
         return (
@@ -24,6 +27,13 @@ export default function LowStockTable() {
 
     return (
         <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {selectedProduct && (
+                <StockMovementModal
+                    product={selectedProduct}
+                    onClose={() => setSelectedProduct(null)}
+                />
+            )}
+
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                 <div>
                     <h2 className="text-lg font-semibold text-slate-900">
@@ -53,6 +63,7 @@ export default function LowStockTable() {
                                 <th className="px-6 py-4 font-semibold">Current Stock</th>
                                 <th className="px-6 py-4 font-semibold">Threshold</th>
                                 <th className="px-6 py-4 font-semibold">Status</th>
+                                <th className="px-6 py-4 font-semibold text-right">Action</th>
                             </tr>
                         </thead>
 
@@ -86,6 +97,15 @@ export default function LowStockTable() {
                                                 ? "Out of stock"
                                                 : "Low stock"}
                                         </span>
+                                    </td>
+
+                                    <td className="px-6 py-4 text-right">
+                                        <button
+                                            onClick={() => setSelectedProduct(product)}
+                                            className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                                        >
+                                            + Restock
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

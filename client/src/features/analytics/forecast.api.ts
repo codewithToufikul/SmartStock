@@ -9,6 +9,11 @@ export interface DemandForecastItem {
     averageDailyDemand: number;
     estimatedDaysRemaining: number | null;
     lowStock: boolean;
+    leadTimeDays?: number;
+    safetyStock?: number;
+    reorderPoint?: number;
+    needsRestock?: boolean;
+    suggestedRestock?: number;
 }
 
 export interface ApiResponse<T> {

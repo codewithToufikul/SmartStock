@@ -40,8 +40,9 @@ export async function getProductDemandForecast(
 
     const products = await Product.find({
         workspace: workspaceObjectId,
+        isArchived: { $ne: true },
     })
-        .select("_id name sku stockQuantity lowStockThreshold")
+        .select("_id name sku stockQuantity lowStockThreshold leadTimeDays safetyStock")
         .sort({ name: 1 })
         .lean();
 
@@ -54,6 +55,18 @@ export async function getProductDemandForecast(
                 ? Math.round((product.stockQuantity / averageDailyDemand) * 100) / 100
                 : null;
 
+        const leadTime = product.leadTimeDays ?? 0;
+        const safetyStock = product.safetyStock ?? 0;
+
+        // SRS Reorder Point formula: ROP = ceil(d_hat * L) + SS
+        const reorderPoint = Math.ceil(averageDailyDemand * leadTime) + safetyStock;
+
+        // Suggested restock quantity Q
+        const needsRestock = product.stockQuantity <= reorderPoint || product.stockQuantity <= product.lowStockThreshold;
+        const suggestedRestock = needsRestock
+            ? Math.max(1, Math.max(reorderPoint, product.lowStockThreshold * 2) - product.stockQuantity)
+            : 0;
+
         return {
             productId: String(product._id),
             name: product.name,
@@ -62,6 +75,11 @@ export async function getProductDemandForecast(
             totalUnitsSold,
             averageDailyDemand: Math.round(averageDailyDemand * 100) / 100,
             estimatedDaysRemaining,
+            leadTimeDays: leadTime,
+            safetyStock,
+            reorderPoint,
+            needsRestock,
+            suggestedRestock,
             lowStock: product.stockQuantity <= product.lowStockThreshold,
         };
     });

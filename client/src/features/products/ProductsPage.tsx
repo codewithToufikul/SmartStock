@@ -8,6 +8,7 @@ import {
 } from "./products.api";
 import { useGetCategoriesQuery } from "../categories/categories.api";
 import { useGetSuppliersQuery } from "../suppliers/suppliers.api";
+import StockMovementModal from "../stock-movements/StockMovementModal";
 
 export default function ProductsPage() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -18,6 +19,7 @@ export default function ProductsPage() {
         useCreateProductMutation();
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+    const [stockMovementProduct, setStockMovementProduct] = useState<Product | null>(null);
 
     const [updateProduct, { isLoading: isUpdating }] =
         useUpdateProductMutation();
@@ -391,6 +393,13 @@ export default function ProductsPage() {
                 </div>
             )}
 
+            {stockMovementProduct && (
+                <StockMovementModal
+                    product={stockMovementProduct}
+                    onClose={() => setStockMovementProduct(null)}
+                />
+            )}
+
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">
@@ -507,14 +516,21 @@ export default function ProductsPage() {
                                             <td className="px-5 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button
+                                                        onClick={() => setStockMovementProduct(product)}
+                                                        className="rounded-lg border border-blue-200 bg-blue-50/60 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition"
+                                                        title="Stock In, Out, or Audit Adjustment"
+                                                    >
+                                                        Adjust Stock
+                                                    </button>
+                                                    <button
                                                         onClick={() => setEditingProduct(product)}
-                                                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+                                                        className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
                                                     >
                                                         Edit
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteProduct(product._id, product.name)}
-                                                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition"
+                                                        className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition"
                                                     >
                                                         Delete
                                                     </button>
