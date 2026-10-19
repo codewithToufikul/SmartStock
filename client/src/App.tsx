@@ -13,11 +13,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
-        {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
@@ -28,7 +26,6 @@ export default function App() {
           </Route>
         </Route>
 
-        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -43,7 +43,6 @@ export async function createSale(
                 const previousQuantity = product.stockQuantity;
                 const newQuantity = previousQuantity - item.quantity;
 
-                // Atomic conditional update: stock must still be sufficient.
                 const updatedProduct = await Product.findOneAndUpdate(
                     {
                         _id: product._id,
@@ -161,7 +160,6 @@ export async function cancelSale(
                 throw new AppError(400, "This sale has already been cancelled and reversed");
             }
 
-            // Restore stock for all items atomically
             for (const item of sale.items) {
                 const product = await Product.findOne({
                     _id: item.product,

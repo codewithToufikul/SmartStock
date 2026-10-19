@@ -44,7 +44,6 @@ async function runSeed() {
         console.log(`Using existing user workspace: ${workspaceId}`);
     }
 
-    // 1. Categories
     console.log("Seeding categories...");
     const [catElectronics, catAccessories] = await Promise.all([
         Category.findOneAndUpdate(
@@ -59,7 +58,6 @@ async function runSeed() {
         ),
     ]);
 
-    // 2. Suppliers
     console.log("Seeding suppliers...");
     const [supplierApex, supplierLogistics] = await Promise.all([
         Supplier.findOneAndUpdate(
@@ -88,7 +86,6 @@ async function runSeed() {
         ),
     ]);
 
-    // 3. Products
     console.log("Seeding products...");
     const sampleProducts = [
         {
@@ -160,7 +157,6 @@ async function runSeed() {
         seededProducts.push(prod);
     }
 
-    // 4. Historical Sales over the past 7 days for rich analytics & forecasting
     const existingSalesCount = await Sale.countDocuments({ workspace: workspaceId });
     if (existingSalesCount === 0 && seededProducts.length >= 2) {
         console.log("Generating sample sales transactions over the past 7 days...");
@@ -212,7 +208,6 @@ async function runSeed() {
                     updatedAt: saleDate,
                 });
 
-                // Corresponding movement records
                 for (const item of items) {
                     await StockMovement.create({
                         product: item.product,

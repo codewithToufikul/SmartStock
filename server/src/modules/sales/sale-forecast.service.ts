@@ -59,10 +59,7 @@ export async function getProductDemandForecast(
         const leadTime = product.leadTimeDays ?? 0;
         const safetyStock = product.safetyStock ?? 0;
 
-        // SRS Reorder Point formula: ROP = ceil(d_hat * L) + SS
         const reorderPoint = Math.ceil(averageDailyDemand * leadTime) + safetyStock;
-
-        // Suggested restock quantity Q
         const needsRestock = product.stockQuantity <= reorderPoint || product.stockQuantity <= product.lowStockThreshold;
         const suggestedRestock = needsRestock
             ? Math.max(1, Math.max(reorderPoint, product.lowStockThreshold * 2) - product.stockQuantity)

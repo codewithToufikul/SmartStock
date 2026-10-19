@@ -108,7 +108,6 @@ export async function archiveCategory(actor: Actor, categoryId: string) {
         throw new AppError(400, "Invalid category ID");
     }
 
-    // Check if an active product depends on this category (FR-04 requirement)
     const productUsingCategory = await Product.findOne({
         workspace: actor.workspaceId,
         category: categoryId,

@@ -122,7 +122,6 @@ export async function archiveSupplier(actor: Actor, supplierId: string) {
         throw new AppError(400, "Invalid supplier ID");
     }
 
-    // Check if an active product depends on this supplier
     const productUsingSupplier = await Product.findOne({
         workspace: actor.workspaceId,
         supplier: supplierId,

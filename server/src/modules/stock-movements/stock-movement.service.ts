@@ -60,7 +60,6 @@ export async function createStockMovement(
                 throw new AppError(400, "Stock quantity has not changed");
             }
 
-            // Compare-and-set: stale quantity দিয়ে update ঠেকায়।
             const updatedProduct = await Product.findOneAndUpdate(
                 {
                     _id: product._id,
