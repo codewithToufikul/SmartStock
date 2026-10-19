@@ -9,6 +9,8 @@ const description = z.string().trim().max(1000).optional();
 const nonNegativePrice = z.number().finite().min(0);
 const nonNegativeInteger = z.number().int().min(0);
 
+const optionalObjectId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ID").optional().nullable();
+
 export const createProductSchema = z.object({
     name: productName,
     sku,
@@ -17,6 +19,10 @@ export const createProductSchema = z.object({
     sellingPrice: nonNegativePrice,
     stockQuantity: nonNegativeInteger.optional().default(0),
     lowStockThreshold: nonNegativeInteger.optional().default(5),
+    category: optionalObjectId,
+    supplier: optionalObjectId,
+    leadTimeDays: nonNegativeInteger.optional().default(0),
+    safetyStock: nonNegativeInteger.optional().default(0),
 }).strict();
 
 export const updateProductSchema = z.object({
@@ -25,7 +31,12 @@ export const updateProductSchema = z.object({
     description,
     costPrice: nonNegativePrice.optional(),
     sellingPrice: nonNegativePrice.optional(),
+    stockQuantity: nonNegativeInteger.optional(),
     lowStockThreshold: nonNegativeInteger.optional(),
+    category: optionalObjectId,
+    supplier: optionalObjectId,
+    leadTimeDays: nonNegativeInteger.optional(),
+    safetyStock: nonNegativeInteger.optional(),
 }).strict().refine(
     (data) => Object.keys(data).length > 0,
     { message: "At least one field must be provided" },

@@ -34,7 +34,18 @@ export async function createProduct(
 ) {
     try {
         const product = await Product.create({
-            ...input,
+            name: input.name,
+            sku: input.sku,
+            description: input.description ?? "",
+            costPrice: input.costPrice,
+            sellingPrice: input.sellingPrice,
+            stockQuantity: input.stockQuantity ?? 0,
+            lowStockThreshold: input.lowStockThreshold ?? 5,
+            category: input.category ? new mongoose.Types.ObjectId(input.category) : null,
+            supplier: input.supplier ? new mongoose.Types.ObjectId(input.supplier) : null,
+            leadTimeDays: input.leadTimeDays ?? 0,
+            safetyStock: input.safetyStock ?? 0,
+            isArchived: false,
             workspace: new mongoose.Types.ObjectId(actor.workspaceId),
             createdBy: new mongoose.Types.ObjectId(actor.userId),
         });
@@ -48,7 +59,11 @@ export async function createProduct(
 export async function listProducts(actor: ProductActor) {
     const products = await Product.find({
         workspace: actor.workspaceId,
-    }).sort({ createdAt: -1 });
+        isArchived: { $ne: true },
+    })
+        .populate("category", "name")
+        .populate("supplier", "name contactPerson phone")
+        .sort({ createdAt: -1 });
 
     return {
         products,
@@ -63,7 +78,9 @@ export async function getProductById(
     const product = await Product.findOne({
         _id: productId,
         workspace: actor.workspaceId,
-    });
+    })
+        .populate("category", "name")
+        .populate("supplier", "name contactPerson phone");
 
     if (!product) {
         throw new AppError(404, "Product not found");
@@ -88,7 +105,9 @@ export async function updateProduct(
                 new: true,
                 runValidators: true,
             },
-        );
+        )
+            .populate("category", "name")
+            .populate("supplier", "name contactPerson phone");
 
         if (!product) {
             throw new AppError(404, "Product not found");
@@ -104,10 +123,14 @@ export async function deleteProduct(
     actor: ProductActor,
     productId: string,
 ) {
-    const product = await Product.findOneAndDelete({
-        _id: productId,
-        workspace: actor.workspaceId,
-    });
+    const product = await Product.findOneAndUpdate(
+        {
+            _id: productId,
+            workspace: actor.workspaceId,
+        },
+        { $set: { isArchived: true } },
+        { new: true },
+    );
 
     if (!product) {
         throw new AppError(404, "Product not found");

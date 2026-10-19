@@ -8,6 +8,11 @@ export interface IProduct {
     sellingPrice: number;
     stockQuantity: number;
     lowStockThreshold: number;
+    category?: Types.ObjectId | null | undefined;
+    supplier?: Types.ObjectId | null | undefined;
+    leadTimeDays: number;
+    safetyStock: number;
+    isArchived: boolean;
     workspace: Types.ObjectId;
     createdBy: Types.ObjectId;
     createdAt: Date;
@@ -73,6 +78,46 @@ const productSchema = new Schema<IProduct>(
             },
         },
 
+        category: {
+            type: Schema.Types.ObjectId,
+            ref: "Category",
+            default: null,
+            index: true,
+        },
+
+        supplier: {
+            type: Schema.Types.ObjectId,
+            ref: "Supplier",
+            default: null,
+            index: true,
+        },
+
+        leadTimeDays: {
+            type: Number,
+            default: 0,
+            min: 0,
+            validate: {
+                validator: Number.isInteger,
+                message: "Lead time must be an integer",
+            },
+        },
+
+        safetyStock: {
+            type: Number,
+            default: 0,
+            min: 0,
+            validate: {
+                validator: Number.isInteger,
+                message: "Safety stock must be an integer",
+            },
+        },
+
+        isArchived: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
+
         workspace: {
             type: Schema.Types.ObjectId,
             ref: "Workspace",
@@ -96,6 +141,9 @@ productSchema.index(
     { workspace: 1, sku: 1 },
     { unique: true },
 );
+productSchema.index({ workspace: 1, category: 1 });
+productSchema.index({ workspace: 1, supplier: 1 });
+productSchema.index({ workspace: 1, isArchived: 1 });
 
 export const Product: Model<IProduct> =
     (mongoose.models.Product as Model<IProduct>) ??
