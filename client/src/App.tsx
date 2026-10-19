@@ -5,6 +5,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import ProductsPage from "./features/products/ProductsPage";
+import CategoriesPage from "./features/categories/CategoriesPage";
+import SuppliersPage from "./features/suppliers/SuppliersPage";
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
           </Route>
         </Route>
 

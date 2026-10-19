@@ -30,6 +30,10 @@ export interface Product {
     sellingPrice: number;
     stockQuantity: number;
     lowStockThreshold: number;
+    category?: { _id: string; name: string } | string | null;
+    supplier?: { _id: string; name: string; contactPerson?: string; phone?: string } | string | null;
+    leadTimeDays?: number;
+    safetyStock?: number;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -75,6 +79,10 @@ export const productsApi = api.injectEndpoints({
                 sellingPrice: number;
                 stockQuantity: number;
                 lowStockThreshold: number;
+                category?: string | null;
+                supplier?: string | null;
+                leadTimeDays?: number;
+                safetyStock?: number;
             }
         >({
             query: (body) => ({
@@ -98,7 +106,12 @@ export const productsApi = api.injectEndpoints({
                         | "sellingPrice"
                         | "stockQuantity"
                         | "lowStockThreshold"
-                    >
+                        | "leadTimeDays"
+                        | "safetyStock"
+                    > & {
+                        category?: string | null;
+                        supplier?: string | null;
+                    }
                 >;
             }
         >({

@@ -6,6 +6,8 @@ import {
     useDeleteProductMutation,
     type Product,
 } from "./products.api";
+import { useGetCategoriesQuery } from "../categories/categories.api";
+import { useGetSuppliersQuery } from "../suppliers/suppliers.api";
 
 export default function ProductsPage() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -21,6 +23,12 @@ export default function ProductsPage() {
         useUpdateProductMutation();
 
     const [deleteProduct] = useDeleteProductMutation();
+
+    const { data: categoriesData } = useGetCategoriesQuery();
+    const { data: suppliersData } = useGetSuppliersQuery();
+
+    const categoriesList = categoriesData?.categories ?? [];
+    const suppliersList = suppliersData?.suppliers ?? [];
 
     const { data, isLoading, isError, refetch } = useGetProductsQuery({
         page,
@@ -40,6 +48,9 @@ export default function ProductsPage() {
         const form = event.currentTarget;
         const formData = new FormData(form);
 
+        const categoryVal = String(formData.get("category") ?? "").trim();
+        const supplierVal = String(formData.get("supplier") ?? "").trim();
+
         const payload = {
             name: String(formData.get("name") ?? "").trim(),
             sku: String(formData.get("sku") ?? "").trim(),
@@ -48,6 +59,10 @@ export default function ProductsPage() {
             sellingPrice: Number(formData.get("sellingPrice")),
             stockQuantity: Number(formData.get("stockQuantity")),
             lowStockThreshold: Number(formData.get("lowStockThreshold")),
+            category: categoryVal || null,
+            supplier: supplierVal || null,
+            leadTimeDays: Number(formData.get("leadTimeDays") || 0),
+            safetyStock: Number(formData.get("safetyStock") || 0),
         };
 
         try {
@@ -69,6 +84,9 @@ export default function ProductsPage() {
 
         const formData = new FormData(event.currentTarget);
 
+        const categoryVal = String(formData.get("category") ?? "").trim();
+        const supplierVal = String(formData.get("supplier") ?? "").trim();
+
         const body = {
             name: String(formData.get("name") ?? "").trim(),
             sku: String(formData.get("sku") ?? "").trim(),
@@ -77,6 +95,10 @@ export default function ProductsPage() {
             sellingPrice: Number(formData.get("sellingPrice")),
             stockQuantity: Number(formData.get("stockQuantity")),
             lowStockThreshold: Number(formData.get("lowStockThreshold")),
+            category: categoryVal || null,
+            supplier: supplierVal || null,
+            leadTimeDays: Number(formData.get("leadTimeDays") || 0),
+            safetyStock: Number(formData.get("safetyStock") || 0),
         };
 
         try {
@@ -151,10 +173,66 @@ export default function ProductsPage() {
                                     required={field.name !== "description"}
                                     min={field.type === "number" ? 0 : undefined}
                                     step={field.type === "number" ? "any" : undefined}
-                                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-blue-500"
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
                                 />
                             </label>
                         ))}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Category</span>
+                                <select
+                                    name="category"
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500 bg-white"
+                                >
+                                    <option value="">No Category</option>
+                                    {categoriesList.map((cat) => (
+                                        <option key={cat._id} value={cat._id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Supplier</span>
+                                <select
+                                    name="supplier"
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500 bg-white"
+                                >
+                                    <option value="">No Supplier</option>
+                                    {suppliersList.map((sup) => (
+                                        <option key={sup._id} value={sup._id}>
+                                            {sup.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Lead Time (Days)</span>
+                                <input
+                                    name="leadTimeDays"
+                                    type="number"
+                                    min={0}
+                                    defaultValue={0}
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                                />
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Safety Stock</span>
+                                <input
+                                    name="safetyStock"
+                                    type="number"
+                                    min={0}
+                                    defaultValue={0}
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                                />
+                            </label>
+                        </div>
 
                         <div className="flex justify-end gap-3 pt-2">
                             <button
@@ -222,10 +300,76 @@ export default function ProductsPage() {
                                     required={field.name !== "description"}
                                     min={field.type === "number" ? 0 : undefined}
                                     step={field.type === "number" ? "any" : undefined}
-                                    className="w-full rounded-lg border border-slate-200 px-3 py-2.5 outline-none focus:border-blue-500"
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
                                 />
                             </label>
                         ))}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Category</span>
+                                <select
+                                    name="category"
+                                    defaultValue={
+                                        typeof editingProduct.category === "object" && editingProduct.category
+                                            ? editingProduct.category._id
+                                            : (editingProduct.category as string) || ""
+                                    }
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500 bg-white"
+                                >
+                                    <option value="">No Category</option>
+                                    {categoriesList.map((cat) => (
+                                        <option key={cat._id} value={cat._id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Supplier</span>
+                                <select
+                                    name="supplier"
+                                    defaultValue={
+                                        typeof editingProduct.supplier === "object" && editingProduct.supplier
+                                            ? editingProduct.supplier._id
+                                            : (editingProduct.supplier as string) || ""
+                                    }
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500 bg-white"
+                                >
+                                    <option value="">No Supplier</option>
+                                    {suppliersList.map((sup) => (
+                                        <option key={sup._id} value={sup._id}>
+                                            {sup.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Lead Time (Days)</span>
+                                <input
+                                    name="leadTimeDays"
+                                    type="number"
+                                    min={0}
+                                    defaultValue={editingProduct.leadTimeDays ?? 0}
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                                />
+                            </label>
+
+                            <label className="block space-y-1">
+                                <span className="text-sm font-medium text-slate-700">Safety Stock</span>
+                                <input
+                                    name="safetyStock"
+                                    type="number"
+                                    min={0}
+                                    defaultValue={editingProduct.safetyStock ?? 0}
+                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500"
+                                />
+                            </label>
+                        </div>
 
                         <div className="flex justify-end gap-3 pt-2">
                             <button
@@ -310,6 +454,7 @@ export default function ProductsPage() {
                             <thead className="bg-slate-50 text-slate-600">
                                 <tr>
                                     <th className="px-5 py-4 font-semibold">Product</th>
+                                    <th className="px-5 py-4 font-semibold">Category</th>
                                     <th className="px-5 py-4 font-semibold">SKU</th>
                                     <th className="px-5 py-4 font-semibold">Stock</th>
                                     <th className="px-5 py-4 font-semibold">Selling Price</th>
@@ -328,6 +473,11 @@ export default function ProductsPage() {
                                         <tr key={product._id} className="hover:bg-slate-50">
                                             <td className="px-5 py-4 font-medium text-slate-900">
                                                 {product.name}
+                                            </td>
+                                            <td className="px-5 py-4 text-slate-600">
+                                                {typeof product.category === "object" && product.category?.name
+                                                    ? product.category.name
+                                                    : "—"}
                                             </td>
                                             <td className="px-5 py-4 text-slate-600">
                                                 {product.sku}
