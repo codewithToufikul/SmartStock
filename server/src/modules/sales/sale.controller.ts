@@ -50,6 +50,7 @@ export const listSalesController: RequestHandler = async (
 
         const [sales, total] = await Promise.all([
             Sale.find(filter)
+                .populate("soldBy", "name email")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(query.limit)
@@ -88,7 +89,9 @@ export const getSaleByIdController: RequestHandler = async (
         const sale = await Sale.findOne({
             _id: req.params.saleId,
             workspace: req.auth.workspaceId,
-        }).lean();
+        })
+            .populate("soldBy", "name email")
+            .lean();
 
         if (!sale) {
             throw new AppError(404, "Sale not found");

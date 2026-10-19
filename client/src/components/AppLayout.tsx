@@ -52,6 +52,10 @@ export default function AppLayout() {
                                 Products
                             </NavLink>
 
+                            <NavLink to="/sales" className={linkClass}>
+                                Sales
+                            </NavLink>
+
                             <NavLink to="/categories" className={linkClass}>
                                 Categories
                             </NavLink>
