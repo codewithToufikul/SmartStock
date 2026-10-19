@@ -24,8 +24,6 @@ salesRoutes.post(
 
 salesRoutes.get("/", listSalesController);
 
-salesRoutes.get("/:saleId", getSaleByIdController);
-
 salesRoutes.get("/analytics/summary", salesSummaryController);
 
 salesRoutes.get(
@@ -34,5 +32,7 @@ salesRoutes.get(
 );
 
 salesRoutes.get("/analytics/forecast", productDemandForecastController);
+
+salesRoutes.get("/:saleId", getSaleByIdController);
 
 export default salesRoutes;

@@ -84,11 +84,48 @@ export const productsApi = api.injectEndpoints({
             }),
             invalidatesTags: ["Products", "Dashboard"],
         }),
+        updateProduct: builder.mutation<
+            { product: Product },
+            {
+                productId: string;
+                body: Partial<
+                    Pick<
+                        Product,
+                        | "name"
+                        | "sku"
+                        | "description"
+                        | "costPrice"
+                        | "sellingPrice"
+                        | "stockQuantity"
+                        | "lowStockThreshold"
+                    >
+                >;
+            }
+        >({
+            query: ({ productId, body }) => ({
+                url: `/products/${productId}`,
+                method: "PATCH",
+                body,
+            }),
+            invalidatesTags: ["Products", "Dashboard"],
+        }),
+        deleteProduct: builder.mutation<
+            { deleted: boolean; productId: string },
+            string
+        >({
+            query: (productId) => ({
+                url: `/products/${productId}`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["Products", "Dashboard"],
+        }),
     }),
 });
 
 export const {
     useGetLowStockProductsQuery,
     useGetProductsQuery,
-    useCreateProductMutation
+    useCreateProductMutation,
+    useUpdateProductMutation,
+    useDeleteProductMutation,
 } = productsApi;

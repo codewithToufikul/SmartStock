@@ -19,6 +19,9 @@ export default function LowStockTable() {
         );
     }
 
+    const products = data.products ?? [];
+    const total = data.total ?? products.length;
+
     return (
         <section className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
@@ -32,11 +35,11 @@ export default function LowStockTable() {
                 </div>
 
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700">
-                    {data.total} products
+                    {total} products
                 </span>
             </div>
 
-            {data.products.length === 0 ? (
+            {products.length === 0 ? (
                 <p className="p-8 text-center text-sm text-slate-500">
                     All products have sufficient stock.
                 </p>
@@ -54,7 +57,7 @@ export default function LowStockTable() {
                         </thead>
 
                         <tbody className="divide-y divide-slate-100">
-                            {data.products.map((product) => (
+                            {products.map((product) => (
                                 <tr key={product._id} className="hover:bg-slate-50">
                                     <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-900">
                                         {product.name}
