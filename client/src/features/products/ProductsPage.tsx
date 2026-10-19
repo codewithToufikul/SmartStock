@@ -20,6 +20,9 @@ export default function ProductsPage() {
 
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [stockMovementProduct, setStockMovementProduct] = useState<Product | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<string>("");
+    const [selectedStockStatus, setSelectedStockStatus] = useState<string>("ALL");
+    const [sortBy, setSortBy] = useState<string>("name-asc");
 
     const [updateProduct, { isLoading: isUpdating }] =
         useUpdateProductMutation();
@@ -40,7 +43,74 @@ export default function ProductsPage() {
 
     const products = data?.products ?? [];
     const total = data?.total ?? 0;
-    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    const filteredProducts = products
+        .filter((product) => {
+            if (selectedCategory) {
+                const catId =
+                    typeof product.category === "object" && product.category
+                        ? product.category._id
+                        : product.category;
+                if (catId !== selectedCategory) return false;
+            }
+            if (selectedStockStatus === "OUT_OF_STOCK" && product.stockQuantity > 0) return false;
+            if (
+                selectedStockStatus === "LOW_STOCK" &&
+                (product.stockQuantity === 0 || product.stockQuantity > product.lowStockThreshold)
+            )
+                return false;
+            if (
+                selectedStockStatus === "IN_STOCK" &&
+                product.stockQuantity <= product.lowStockThreshold
+            )
+                return false;
+
+            return true;
+        })
+        .sort((a, b) => {
+            if (sortBy === "name-asc") return a.name.localeCompare(b.name);
+            if (sortBy === "name-desc") return b.name.localeCompare(a.name);
+            if (sortBy === "stock-desc") return b.stockQuantity - a.stockQuantity;
+            if (sortBy === "stock-asc") return a.stockQuantity - b.stockQuantity;
+            if (sortBy === "price-desc") return b.sellingPrice - a.sellingPrice;
+            if (sortBy === "price-asc") return a.sellingPrice - b.sellingPrice;
+            return 0;
+        });
+
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / limit));
+
+    function exportToCSV() {
+        const headers = ["Product Name", "SKU", "Category", "Cost Price", "Selling Price", "Stock Quantity", "Low Stock Threshold", "Status"];
+        const rows = filteredProducts.map((p) => {
+            const catName =
+                typeof p.category === "object" && p.category ? p.category.name : "N/A";
+            const status =
+                p.stockQuantity === 0
+                    ? "Out of Stock"
+                    : p.stockQuantity <= p.lowStockThreshold
+                    ? "Low Stock"
+                    : "In Stock";
+            return [
+                `"${p.name.replace(/"/g, '""')}"`,
+                `"${p.sku}"`,
+                `"${catName}"`,
+                p.costPrice,
+                p.sellingPrice,
+                p.stockQuantity,
+                p.lowStockThreshold,
+                status,
+            ].join(",");
+        });
+
+        const csvContent = [headers.join(","), ...rows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `smartstock-products-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
 
     async function handleCreateProduct(
         event: React.FormEvent<HTMLFormElement>
@@ -406,24 +476,29 @@ export default function ProductsPage() {
                         Products
                     </h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Manage your inventory and stock levels.
+                        Manage your inventory ({filteredProducts.length} of {total} products displayed).
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500">
-                        Total products: {total}
-                    </span>
+                <div className="flex items-center gap-2.5">
+                    <button
+                        onClick={exportToCSV}
+                        className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition shadow-xs flex items-center gap-1.5"
+                        title="Download CSV report"
+                    >
+                        Export CSV
+                    </button>
                     <button
                         onClick={() => setIsFormOpen(true)}
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition shadow-xs"
                     >
                         + Add Product
                     </button>
                 </div>
             </div>
 
-            <div className="mb-5">
+            {/* Search, Filter & Sort Bar */}
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <input
                     type="search"
                     value={searchQuery}
@@ -431,9 +506,46 @@ export default function ProductsPage() {
                         setSearchQuery(event.target.value);
                         setPage(1);
                     }}
-                    placeholder="Search by product name or SKU..."
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 sm:max-w-md"
+                    placeholder="Search name or SKU..."
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
+
+                <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                    <option value="">All Categories</option>
+                    {categoriesList.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
+
+                <select
+                    value={selectedStockStatus}
+                    onChange={(e) => setSelectedStockStatus(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                    <option value="ALL">All Stock Statuses</option>
+                    <option value="IN_STOCK">In Stock (Healthy)</option>
+                    <option value="LOW_STOCK">Low Stock (At/Below Threshold)</option>
+                    <option value="OUT_OF_STOCK">Out of Stock (0 units)</option>
+                </select>
+
+                <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                    <option value="name-asc">Sort: Name (A-Z)</option>
+                    <option value="name-desc">Sort: Name (Z-A)</option>
+                    <option value="stock-desc">Sort: Stock (High to Low)</option>
+                    <option value="stock-asc">Sort: Stock (Low to High)</option>
+                    <option value="price-desc">Sort: Price (High to Low)</option>
+                    <option value="price-asc">Sort: Price (Low to High)</option>
+                </select>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -453,10 +565,22 @@ export default function ProductsPage() {
                             Try again
                         </button>
                     </div>
-                ) : products.length === 0 ? (
-                    <p className="p-8 text-center text-slate-500">
-                        No products found.
-                    </p>
+                ) : filteredProducts.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">
+                        <p>No products match your filters.</p>
+                        {(selectedCategory || selectedStockStatus !== "ALL" || searchQuery) && (
+                            <button
+                                onClick={() => {
+                                    setSelectedCategory("");
+                                    setSelectedStockStatus("ALL");
+                                    setSearchQuery("");
+                                }}
+                                className="mt-2 text-sm font-semibold text-blue-600 hover:underline"
+                            >
+                                Clear filters
+                            </button>
+                        )}
+                    </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -473,7 +597,7 @@ export default function ProductsPage() {
                             </thead>
 
                             <tbody className="divide-y divide-slate-100">
-                                {products.map((product) => {
+                                {filteredProducts.map((product) => {
                                     const outOfStock = product.stockQuantity === 0;
                                     const lowStock =
                                         product.stockQuantity <= product.lowStockThreshold;

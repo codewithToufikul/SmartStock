@@ -19,6 +19,7 @@ export async function getProductDemandForecast(
         {
             $match: {
                 workspace: workspaceObjectId,
+                status: { $ne: "CANCELLED" },
                 createdAt: { $gte: start, $lte: end },
             },
         },

@@ -102,6 +102,8 @@ export async function createSale(
                 );
             }
 
+            const saleNumber = `INV-${Date.now().toString().slice(-6)}`;
+
             const [sale] = await Sale.create(
                 [
                     {
@@ -110,6 +112,8 @@ export async function createSale(
                         items: saleItems,
                         subtotal,
                         total: subtotal,
+                        status: "COMPLETED",
+                        saleNumber,
                     },
                 ],
                 { session },
@@ -127,6 +131,77 @@ export async function createSale(
         }
 
         return { sale: createdSale };
+    } finally {
+        await session.endSession();
+    }
+}
+
+export async function cancelSale(
+    workspaceId: string,
+    userId: string,
+    saleId: string,
+    reason = "Customer return / Sale cancelled",
+) {
+    const session = await mongoose.startSession();
+
+    try {
+        let updatedSale: any;
+
+        await session.withTransaction(async () => {
+            const sale = await Sale.findOne({
+                _id: saleId,
+                workspace: workspaceId,
+            }).session(session);
+
+            if (!sale) {
+                throw new AppError(404, "Sale not found");
+            }
+
+            if (sale.status === "CANCELLED") {
+                throw new AppError(400, "This sale has already been cancelled and reversed");
+            }
+
+            // Restore stock for all items atomically
+            for (const item of sale.items) {
+                const product = await Product.findOne({
+                    _id: item.product,
+                    workspace: workspaceId,
+                }).session(session);
+
+                if (product) {
+                    const previousQuantity = product.stockQuantity;
+                    const newQuantity = previousQuantity + item.quantity;
+
+                    await Product.updateOne(
+                        { _id: product._id },
+                        { $inc: { stockQuantity: item.quantity } },
+                        { session },
+                    );
+
+                    await StockMovement.create(
+                        [
+                            {
+                                product: product._id,
+                                workspace: workspaceId,
+                                performedBy: userId,
+                                type: "SALE_REVERSAL",
+                                quantity: item.quantity,
+                                previousQuantity,
+                                newQuantity,
+                                reason: `Reversal for ${sale.saleNumber || sale._id}: ${reason}`,
+                            },
+                        ],
+                        { session },
+                    );
+                }
+            }
+
+            sale.status = "CANCELLED";
+            await sale.save({ session });
+            updatedSale = sale.toObject();
+        });
+
+        return { sale: updatedSale };
     } finally {
         await session.endSession();
     }

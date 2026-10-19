@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useGetProductsQuery, type Product } from "../products/products.api";
-import { useCreateSaleMutation, useGetSalesQuery, type Sale } from "./sales.api";
+import {
+    useCreateSaleMutation,
+    useGetSalesQuery,
+    useCancelSaleMutation,
+    type Sale,
+} from "./sales.api";
+import SaleInvoiceModal from "./SaleInvoiceModal";
 
 interface CartItem {
     product: Product;
@@ -17,6 +23,7 @@ export default function SalesPage() {
     const { data: productsData, isLoading: isLoadingProducts } = useGetProductsQuery();
     const { data: salesData, isLoading: isLoadingSales, refetch: refetchSales } = useGetSalesQuery();
     const [createSale, { isLoading: isCreatingSale }] = useCreateSaleMutation();
+    const [cancelSale, { isLoading: isCancelling }] = useCancelSaleMutation();
 
     const allProducts = productsData?.products ?? [];
     const salesList = salesData?.sales ?? [];
@@ -100,11 +107,32 @@ export default function SalesPage() {
             setSuccessMessage(`Sale completed successfully! Total: ৳${result.sale.total.toLocaleString()}`);
             setCart([]);
             refetchSales();
+            setSelectedSale(result.sale);
             setTimeout(() => setSuccessMessage(null), 5000);
         } catch (err: unknown) {
             console.error("Sale error:", err);
             const maybeErr = err as { data?: { message?: string } };
             alert(maybeErr.data?.message || "Failed to process sale. Check stock levels.");
+        }
+    }
+
+    async function handleCancelSale(sale: Sale) {
+        const invNum = sale.saleNumber || `#${sale._id.slice(-6).toUpperCase()}`;
+        if (
+            !window.confirm(
+                `Are you sure you want to cancel and reverse sale ${invNum}? All items will be returned to inventory.`,
+            )
+        ) {
+            return;
+        }
+
+        try {
+            await cancelSale({ saleId: sale._id }).unwrap();
+            alert(`Sale ${invNum} was cancelled and stock has been restored.`);
+            refetchSales();
+        } catch (err: any) {
+            console.error("Failed to cancel sale:", err);
+            alert(err?.data?.message || "Failed to cancel sale.");
         }
     }
 
@@ -355,11 +383,12 @@ export default function SalesPage() {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-slate-50 text-slate-600">
                                     <tr>
-                                        <th className="px-5 py-4 font-semibold">Sale Reference / Date</th>
-                                        <th className="px-5 py-4 font-semibold">Cashier / Sold By</th>
+                                        <th className="px-5 py-4 font-semibold">Sale Ref / Date</th>
+                                        <th className="px-5 py-4 font-semibold">Cashier</th>
                                         <th className="px-5 py-4 font-semibold">Items</th>
                                         <th className="px-5 py-4 font-semibold">Total Amount</th>
-                                        <th className="px-5 py-4 font-semibold text-right">Action</th>
+                                        <th className="px-5 py-4 font-semibold">Status</th>
+                                        <th className="px-5 py-4 font-semibold text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
@@ -373,14 +402,16 @@ export default function SalesPage() {
                                             (sum, i) => sum + i.quantity,
                                             0,
                                         );
+                                        const isCancelled = sale.status === "CANCELLED";
+                                        const refNumber = sale.saleNumber || `#${sale._id.slice(-6).toUpperCase()}`;
 
                                         return (
                                             <tr key={sale._id} className="hover:bg-slate-50">
                                                 <td className="px-5 py-4">
-                                                    <p className="font-mono text-xs text-slate-500">
-                                                        #{sale._id.slice(-6).toUpperCase()}
+                                                    <p className="font-mono text-xs font-bold text-slate-900">
+                                                        {refNumber}
                                                     </p>
-                                                    <p className="text-xs text-slate-700 mt-0.5">
+                                                    <p className="text-xs text-slate-500 mt-0.5">
                                                         {dateStr}
                                                     </p>
                                                 </td>
@@ -393,13 +424,36 @@ export default function SalesPage() {
                                                 <td className="px-5 py-4 font-bold text-slate-900">
                                                     ৳{sale.total.toLocaleString()}
                                                 </td>
-                                                <td className="px-5 py-4 text-right">
-                                                    <button
-                                                        onClick={() => setSelectedSale(sale)}
-                                                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition"
+                                                <td className="px-5 py-4">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                            isCancelled
+                                                                ? "bg-rose-100 text-rose-700"
+                                                                : "bg-emerald-100 text-emerald-700"
+                                                        }`}
                                                     >
-                                                        View Receipt
-                                                    </button>
+                                                        {isCancelled ? "Cancelled" : "Completed"}
+                                                    </span>
+                                                </td>
+                                                <td className="px-5 py-4 text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => setSelectedSale(sale)}
+                                                            className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 transition"
+                                                        >
+                                                            Receipt
+                                                        </button>
+                                                        {!isCancelled && (
+                                                            <button
+                                                                onClick={() => handleCancelSale(sale)}
+                                                                disabled={isCancelling}
+                                                                className="rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition disabled:opacity-50"
+                                                                title="Cancel sale and restore stock"
+                                                            >
+                                                                Return / Cancel
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -412,66 +466,10 @@ export default function SalesPage() {
             )}
 
             {selectedSale && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-                        <div className="flex items-center justify-between border-b pb-3">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Sale Receipt</h3>
-                                <p className="text-xs font-mono text-slate-500">
-                                    ID: #{selectedSale._id}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setSelectedSale(null)}
-                                className="text-xl text-slate-400 hover:text-slate-600"
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <div className="text-xs text-slate-500 flex justify-between">
-                            <span>Date: {new Date(selectedSale.createdAt).toLocaleString()}</span>
-                            <span>
-                                Cashier:{" "}
-                                {typeof selectedSale.soldBy === "object" && selectedSale.soldBy?.name
-                                    ? selectedSale.soldBy.name
-                                    : "Owner/Staff"}
-                            </span>
-                        </div>
-
-                        <div className="divide-y divide-slate-100 border-y border-slate-100 py-2">
-                            {selectedSale.items.map((item, idx) => (
-                                <div key={idx} className="py-2 flex items-center justify-between text-sm">
-                                    <div>
-                                        <p className="font-medium text-slate-900">{item.name}</p>
-                                        <p className="text-xs text-slate-500">
-                                            {item.quantity} × ৳{item.unitPrice.toLocaleString()} ({item.sku})
-                                        </p>
-                                    </div>
-                                    <span className="font-semibold text-slate-800">
-                                        ৳{item.lineTotal.toLocaleString()}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex justify-between items-center pt-2">
-                            <span className="text-sm font-bold text-slate-700">Total Paid</span>
-                            <span className="text-xl font-bold text-blue-600">
-                                ৳{selectedSale.total.toLocaleString()}
-                            </span>
-                        </div>
-
-                        <div className="flex justify-end gap-2 pt-4">
-                            <button
-                                onClick={() => setSelectedSale(null)}
-                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <SaleInvoiceModal
+                    sale={selectedSale}
+                    onClose={() => setSelectedSale(null)}
+                />
             )}
         </main>
     );

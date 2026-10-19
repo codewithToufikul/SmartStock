@@ -8,6 +8,7 @@ import {
     createSaleController,
     listSalesController,
     getSaleByIdController,
+    cancelSaleController,
 } from "./sale.controller.js";
 import { dailySalesAnalyticsController, salesSummaryController } from "./sale-analytics.controller.js";
 import { productDemandForecastController } from "./sale-forecast.controller.js";
@@ -34,5 +35,6 @@ salesRoutes.get(
 salesRoutes.get("/analytics/forecast", productDemandForecastController);
 
 salesRoutes.get("/:saleId", getSaleByIdController);
+salesRoutes.post("/:saleId/cancel", cancelSaleController);
 
 export default salesRoutes;

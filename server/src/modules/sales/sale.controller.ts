@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express";
 
-import { createSale } from "./sale.service.js";
+import { createSale, cancelSale } from "./sale.service.js";
 import { Sale } from "./sale.model.js";
 import { AppError } from "../../utils/app-error.js";
 import { listSalesQuerySchema } from "./sale.validation.js";
@@ -101,6 +101,39 @@ export const getSaleByIdController: RequestHandler = async (
             success: true,
             message: "Sale retrieved successfully",
             data: { sale },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const cancelSaleController: RequestHandler = async (
+    req,
+    res,
+    next,
+) => {
+    try {
+        if (!req.auth) {
+            throw new AppError(401, "Authentication is required");
+        }
+
+        const saleId = req.params.saleId;
+        if (!saleId || typeof saleId !== "string") {
+            throw new AppError(400, "Valid sale ID is required");
+        }
+
+        const reason = req.body?.reason || "Customer return / Sale cancelled";
+        const result = await cancelSale(
+            req.auth.workspaceId,
+            req.auth.userId,
+            saleId,
+            reason,
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Sale cancelled and stock reversed successfully",
+            data: result,
         });
     } catch (error) {
         next(error);

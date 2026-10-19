@@ -16,6 +16,8 @@ export interface ISale {
     items: ISaleItem[];
     subtotal: number;
     total: number;
+    status: "COMPLETED" | "CANCELLED";
+    saleNumber?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -95,6 +97,16 @@ const saleSchema = new Schema<ISale>(
             type: Number,
             required: true,
             min: 0,
+        },
+        status: {
+            type: String,
+            enum: ["COMPLETED", "CANCELLED"],
+            default: "COMPLETED",
+            index: true,
+        },
+        saleNumber: {
+            type: String,
+            trim: true,
         },
     },
     { timestamps: true, versionKey: false },

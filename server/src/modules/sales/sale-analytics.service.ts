@@ -8,6 +8,7 @@ export async function getSalesSummary(workspaceId: string) {
         {
             $match: {
                 workspace: objectId,
+                status: { $ne: "CANCELLED" },
             },
         },
         {
@@ -71,6 +72,7 @@ export async function getDailySalesAnalytics(
         {
             $match: {
                 workspace: workspaceObjectId,
+                status: { $ne: "CANCELLED" },
                 createdAt: { $gte: start, $lte: end },
             },
         },

@@ -21,6 +21,8 @@ export interface Sale {
     items: SaleItem[];
     subtotal: number;
     total: number;
+    status?: "COMPLETED" | "CANCELLED";
+    saleNumber?: string;
     createdAt: string;
     updatedAt: string;
 }
@@ -71,7 +73,16 @@ export const salesApi = api.injectEndpoints({
                 method: "POST",
                 body,
             }),
-            invalidatesTags: ["Sales", "Products", "Dashboard"],
+            invalidatesTags: ["Sales", "Products", "Dashboard", "StockMovements"],
+        }),
+
+        cancelSale: builder.mutation<{ sale: Sale }, { saleId: string; reason?: string }>({
+            query: ({ saleId, reason }) => ({
+                url: `/sales/${saleId}/cancel`,
+                method: "POST",
+                body: { reason },
+            }),
+            invalidatesTags: ["Sales", "Products", "Dashboard", "StockMovements"],
         }),
     }),
 });
@@ -80,4 +91,5 @@ export const {
     useGetSalesQuery,
     useGetSaleByIdQuery,
     useCreateSaleMutation,
+    useCancelSaleMutation,
 } = salesApi;

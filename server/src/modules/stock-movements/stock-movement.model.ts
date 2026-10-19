@@ -4,6 +4,7 @@ export const StockMovementType = {
     IN: "IN",
     OUT: "OUT",
     ADJUSTMENT: "ADJUSTMENT",
+    SALE_REVERSAL: "SALE_REVERSAL",
 } as const;
 
 export type StockMovementType =
