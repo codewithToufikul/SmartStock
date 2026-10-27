@@ -14,6 +14,12 @@ export default function LoginPage() {
 
     const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
+    function fillDemoCredentials() {
+        setEmail("owner@smartstock.local");
+        setPassword("Password123!");
+        setErrorMessage(null);
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErrorMessage(null);
@@ -51,6 +57,26 @@ export default function LoginPage() {
                     <p className="mt-1.5 text-sm text-slate-500">
                         Smart Inventory & Demand Intelligence System
                     </p>
+                </div>
+
+                {/* Demo credentials card for assessors */}
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-emerald-700 text-sm font-bold">🔑 Demo Account</span>
+                        <span className="text-xs text-emerald-600 font-medium bg-emerald-100 px-2 py-0.5 rounded-full">For Assessment Review</span>
+                    </div>
+                    <div className="text-xs text-emerald-800 space-y-0.5 font-mono">
+                        <p><span className="font-sans font-semibold text-emerald-700">Email:</span> owner@smartstock.local</p>
+                        <p><span className="font-sans font-semibold text-emerald-700">Pass:</span> Password123!</p>
+                    </div>
+                    <button
+                        type="button"
+                        id="demo-login-btn"
+                        onClick={fillDemoCredentials}
+                        className="w-full mt-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 active:scale-95 transition-all"
+                    >
+                        ⚡ Use Demo Account — Auto Fill
+                    </button>
                 </div>
 
                 {errorMessage && (
